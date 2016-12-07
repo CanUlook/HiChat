@@ -35,13 +35,8 @@
 		</div>
 	</div>	
 <script type="text/javascript">
-	var socket = io.connect(),//与服务器进行连接
-		button = document.getElementById('sendBtn');
-	button.onclick = function(){
-		socket.emit('foo','hello');//发送一个名为foo的函数，并且传递一个hello的参数
-	}
 </script>       
-<script src="../node_modules/socket.io/node_modules/socket.io-client/dist/socket.io"></script>
-<script src="scripts/hichat.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="scripts/HiChat.js"></script>
 </body>
 </html>

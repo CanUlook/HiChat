@@ -60,8 +60,7 @@ HiChat.prototype = {
 		});
 
 		this.socket.on('newMsg',function(user,msg){
-			that.
-			(user,msg);
+			that._displayNewMsg(user,msg);
 		});
 
 		document.getElementById('sendBtn').addEventListener('click',function(){
@@ -75,6 +74,30 @@ HiChat.prototype = {
 			};
 		},false);
 
+		document.getElementById('sendImage').addEventListener('change',function(){
+			//检查是否有文件被选中
+			if (this.files.length!=0) {
+				//获取文件并用filereader读取
+				var file = this.file[0];
+				reader = new FileReader();
+				if(!reader){
+					that._displayNewMsg('system',"!your browser doesn't support filereader","red");
+					this.value = "";
+					return;
+				};
+				reader.onload = function(e){
+					//读取成功，显示到页面并且发送到服务器
+					this.value = "";
+					that.socket.emit('img',e.target.result);
+					this._displayNewMsg('me',e.target.result);
+				};
+				reader.readAsDateURL(file);	
+			};
+		},false);
+
+		this.socket.on('newImg',function(){
+			that._displayNewMsg(user,img);
+		});
 		
 	},
 	_displayNewMsg:function(user,msg,color){
@@ -82,7 +105,7 @@ HiChat.prototype = {
 		msgToDisplay = document.createElement('p');
 		date = new Date().toTimeString().substr(0,8);
 		msgToDisplay.style.color = color || '#000';
-		msgToDisplay.innerHTML = user +   date + msg; 
+		msgToDisplay.innerHTML = user + date + msg; 
 		container.appendChild(msgToDisplay);
 		container.scrollTop = container.scrollHeight;
 	}

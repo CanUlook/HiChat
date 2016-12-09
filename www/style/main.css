@@ -106,3 +106,6 @@ html, body {
 footer {
     text-align: center;
 }
+#historyMsg img{
+    max-width: 99%;
+}

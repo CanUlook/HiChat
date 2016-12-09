@@ -32,5 +32,10 @@ io.on('connection', function(socket) {
     	//将消息传送到出自己以外的所有用户
     	socket.broadcast.emit('newMsg',socket.nickname,msg);
     });     
+
+    //接受用户发来的图片
+    socket.on('img',function(user,img){
+    	this.displayImage(user,img);
+    });
 });
 

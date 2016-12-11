@@ -34,8 +34,8 @@ io.on('connection', function(socket) {
     });     
 
     //接受用户发来的图片
-    socket.on('img',function(user,img){
-    	this.displayImage(user,img);
+    socket.on('img',function(imgData){
+    	socket.broadcast.emit('newImg',socket.nickname,imgData);
     });
 });
 

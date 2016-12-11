@@ -78,7 +78,7 @@ HiChat.prototype = {
 			//检查是否有文件被选中
 			if (this.files.length!=0) {
 				//获取文件并用filereader读取
-				var file = this.file[0];
+				var file = this.files[0];
 				reader = new FileReader();
 				if(!reader){
 					that._displayNewMsg('system',"!your browser doesn't support filereader","red");
@@ -89,25 +89,84 @@ HiChat.prototype = {
 					//读取成功，显示到页面并且发送到服务器
 					this.value = "";
 					that.socket.emit('img',e.target.result);
-					this._displayNewMsg('me',e.target.result);
+					that._displayImage('me',e.target.result);
 				};
-				reader.readAsDateURL(file);	
+				reader.readAsDataURL(file);	
 			};
 		},false);
 
-		this.socket.on('newImg',function(){
-			that._displayNewMsg(user,img);
+		//接收显示图片
+		this.socket.on('newImg',function(user,img){
+			that._displayImage(user,img);
 		});
 		
+		this._initialEmoji();
+		//点击表情按钮显示窗口
+		document.getElementById('emoji').addEventListener('click',function(e){
+			var emojiwrapper = document.getElementById('emojiWrapper');
+			emojiwrapper.style.display = "block";
+			e.stopPropagation();
+		},false);
+		//点击屏幕其他地方，表情关掉
+		document.body.addEventListener('click'.function(e){
+			var emojiwrapper = document.getElementById('emojiWrapper');
+			if (e.target != emojiwrapper) {
+				emojiwrapper.style.display = "none";
+			};
+		},false);
+		//将表情选中后，将相应的代码显示在框中
+		document.getElementById('emojiWrapper').addEventListener('click',function(e){
+			var target = e.target;
+			if (target.nodeName.toLowerCase()=='img'){
+				var messageInput = document.getElementById('messageInput');
+				messageInput.focus();
+				messageInput.value = messageInput.value + '[emoji.'+target.title+']';
+			};
+		},false);
 	},
 	_displayNewMsg:function(user,msg,color){
 		var container = document.getElementById('historyMsg'),
 		msgToDisplay = document.createElement('p');
 		date = new Date().toTimeString().substr(0,8);
 		msgToDisplay.style.color = color || '#000';
-		msgToDisplay.innerHTML = user + date + msg; 
+		msgToDisplay.innerHTML = user + '<span class="timespan">('+date+'):</span>' + msg; 
 		container.appendChild(msgToDisplay);
 		container.scrollTop = container.scrollHeight;
+	},
+	_displayImage:function(user,imgData,color){
+		var container = document.getElementById('historyMsg');
+		msgToDisplay = document.createElement('p');
+		date = new Date().toTimeString().substr(0,8);
+		msgToDisplay.style.color = color || '#000'; 
+		msgToDisplay.innerHTML = user + '<span class="timespan">('+date+'):</span><br/>'+'<a><img src="'+imgData+'"/></a>';
+		container.appendChild(msgToDisplay);
+		container.scrollTop = container.scrollHeight; 
+	},
+	_initialEmoji:function(){
+		var emojiContainer = document.getElementById('emojiWrapper'),
+		docFragment = document.createDocumentFragment();
+		for(var i = 30 ; i>0 ; i--){
+			var emojiItem = document.createElement('img');
+			emojiItem.src = '../content/emoji'+i+'gif';
+			emojiItem.title = i;
+			docFragment.appendChild(emojiItem);
+		};
+		emojiContainer.appendChild(docFragment);
+	},
+	_showEmogi:function(msg){
+		var match,result = msg,
+		reg = /\[emoji:\d+\]/g,
+		emojiIndex,
+		totalEmojiNum = document.getElementById('emojiwrapper').children.length;
+		while(match = reg.exec(msg)){
+			emojiIndex = match[0].slice(7,-1);
+			if (emojiIndex>totalEmojiNum) {
+				result = result.replace(match[0],'[x]');
+			}else{
+				result = result.replace(match[0],'img class = "emoji" src = "../content/emoji/'+emojiIndex+'gif"/>');
+			};
+		};
+		return result;
 	}
 };
 

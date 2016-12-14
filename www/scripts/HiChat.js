@@ -59,18 +59,20 @@ HiChat.prototype = {
 			document.getElementById('status').textContent = userCount + (userCount>1?"users":"user") + 'online';
 		});
 
-		this.socket.on('newMsg',function(user,msg){
-			that._displayNewMsg(user,msg);
+		this.socket.on('newMsg',function(user,msg,color){
+			that._displayNewMsg(user,msg,color);
 		});
 
 		document.getElementById('sendBtn').addEventListener('click',function(){
 			var messageInput = document.getElementById('messageInput'),
-			msg = messageInput.value;
+			msg = messageInput.value,
+			//获取颜色值
+			color = document.getElementById('colorStyle').value;
 			messageInput.value = '';
 			messageInput.focus();
 			if (msg.trim().length!=0) {
-				that.socket.emit('postMsg',msg); //把消息显示在服务器中
-				that._displayNewMsg('me',msg); //把自己的消息显示在自己的窗口中
+				that.socket.emit('postMsg',msg,color); //把消息显示在服务器中
+				that._displayNewMsg('me',msg,color); //把自己的消息显示在自己的窗口中
 			};
 		},false);
 
@@ -95,6 +97,7 @@ HiChat.prototype = {
 			};
 		},false);
 
+
 		//接收显示图片
 		this.socket.on('newImg',function(user,img){
 			that._displayImage(user,img);
@@ -108,7 +111,7 @@ HiChat.prototype = {
 			e.stopPropagation();
 		},false);
 		//点击屏幕其他地方，表情关掉
-		document.body.addEventListener('click'.function(e){
+		document.body.addEventListener('click',function(e){
 			var emojiwrapper = document.getElementById('emojiWrapper');
 			if (e.target != emojiwrapper) {
 				emojiwrapper.style.display = "none";
@@ -120,14 +123,38 @@ HiChat.prototype = {
 			if (target.nodeName.toLowerCase()=='img'){
 				var messageInput = document.getElementById('messageInput');
 				messageInput.focus();
-				messageInput.value = messageInput.value + '[emoji.'+target.title+']';
+				messageInput.value = messageInput.value + '[emoji:'+target.title+']';
 			};
 		},false);
+		//昵称进去
+		document.getElementById('nicknameInput').addEventListener('keyup', function(e) {
+	      	if (e.keyCode == 13) {
+	          	var nickName = document.getElementById('nicknameInput').value;
+	          	if (nickName.trim().length != 0) {
+	              that.socket.emit('login', nickName);
+	          	};
+	      	};
+  		}, false);
+  		//消息发送
+		document.getElementById('messageInput').addEventListener('keyup', function(e) {
+		    var messageInput = document.getElementById('messageInput'),
+		        msg = messageInput.value,
+		        color = document.getElementById('colorStyle').value;
+		    if (e.keyCode == 13 && msg.trim().length != 0) {
+		        messageInput.value = '';
+		        that.socket.emit('postMsg', msg, color);
+		        that._displayNewMsg('me', msg, color);
+		    };
+		}, false);
+
 	},
+	//显示新的消息
 	_displayNewMsg:function(user,msg,color){
 		var container = document.getElementById('historyMsg'),
 		msgToDisplay = document.createElement('p');
 		date = new Date().toTimeString().substr(0,8);
+		//将消息中的表情转换为图片
+		msg = this._showEmoji(msg);
 		msgToDisplay.style.color = color || '#000';
 		msgToDisplay.innerHTML = user + '<span class="timespan">('+date+'):</span>' + msg; 
 		container.appendChild(msgToDisplay);
@@ -147,23 +174,24 @@ HiChat.prototype = {
 		docFragment = document.createDocumentFragment();
 		for(var i = 30 ; i>0 ; i--){
 			var emojiItem = document.createElement('img');
-			emojiItem.src = '../content/emoji'+i+'gif';
+			emojiItem.src = '../content/emoji/'+i+'.gif';
 			emojiItem.title = i;
 			docFragment.appendChild(emojiItem);
 		};
 		emojiContainer.appendChild(docFragment);
 	},
-	_showEmogi:function(msg){
-		var match,result = msg,
+	_showEmoji:function(msg){
+		var match, 
+		result = msg,
 		reg = /\[emoji:\d+\]/g,
 		emojiIndex,
-		totalEmojiNum = document.getElementById('emojiwrapper').children.length;
-		while(match = reg.exec(msg)){
+		totalEmojiNum = document.getElementById('emojiWrapper').children.length;
+		while(match = reg.exec(msg)){ 
 			emojiIndex = match[0].slice(7,-1);
 			if (emojiIndex>totalEmojiNum) {
 				result = result.replace(match[0],'[x]');
 			}else{
-				result = result.replace(match[0],'img class = "emoji" src = "../content/emoji/'+emojiIndex+'gif"/>');
+				result = result.replace(match[0],'<img class = "emoji" src = "../content/emoji/' + emojiIndex +'.gif"/>');
 			};
 		};
 		return result;
